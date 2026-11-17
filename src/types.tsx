@@ -27,6 +27,7 @@ export type Config = {
   pricing: Record<string, ModelPrice>
   windows: Window[]
   timezone: "local" | "utc"
+  includeSubagents: boolean
 }
 
 export type Row = {

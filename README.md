@@ -98,6 +98,26 @@ object form in `~/.config/opencode/cli.json`:
 
 (Replace `"package"` with the absolute path of a local checkout, or a git URL, when not installing from npm.)
 
+### Subagent usage
+
+Usage from subagent sessions spawned by the current session is included by
+default, so every model that worked on the session shows up in the panel.
+Set `"includeSubagents": false` to scope the panel to the current session
+only:
+
+```jsonc
+{
+  "plugins": [
+    {
+      "package": "opencode-usage-panel",
+      "options": { "includeSubagents": false }
+    }
+  ]
+}
+```
+
+The `Context` block always reflects the current session.
+
 ### Rate tables
 
 Prices are US dollars per million tokens. `input` is cache-miss input,
