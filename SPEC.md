@@ -20,6 +20,10 @@ feature parity**:
   local-timezone schedule rendering, `"timezone": "utc"` display option.
 - Models without a configured rate table fall back to the per-message `cost`
   opencode records (free tiers show `—`).
+- Subagent usage: per-model rows aggregate the whole session family (the
+  current session plus its descendant subagent sessions) by default, with an
+  `includeSubagents` option to scope back to the current session. The Context
+  block always reflects the current session.
 
 ## 2. Confirmed decisions
 
@@ -28,7 +32,8 @@ feature parity**:
 | Repo | fork `andreacasini/opencode-usage-panel` (upstream: `shiv-source/opencode-usage-panel` @ `b22403a`) |
 | Compatibility | OpenCode **V2 only** (`engines.opencode >= 2.3.0`); no V1 support |
 | Distribution | git / local install only; **no npm publish** |
-| Slot placement | `replace: "sidebar.content"` — takes over the built-in context panel (replaces V1's "disable `internal:sidebar-context`" instructions) |
+| Slot placement | `prepend: "sidebar.content"` — composes with other sidebar panels; the built-in context panel can be disabled with `-opencode.sidebar.context` |
+| Subagent usage | aggregated across the session family by default; `includeSubagents: false` scopes to the current session |
 | Version | `2.0.0` |
 
 ## 3. Target stack (verified against the running opencode v2.3.0)
@@ -64,7 +69,7 @@ export default Plugin.define({
     const location = context.location ?? context.data.location.default()
     void context.data.location.model.sync(location).catch(() => {})
     return context.ui.slot({
-      replace: "sidebar.content",
+      prepend: "sidebar.content",
       render: ({ sessionID }) => <UsagePanel sessionID={sessionID} />,
     })
   },
@@ -75,7 +80,7 @@ export default Plugin.define({
 
 | V1 | V2 |
 | --- | --- |
-| slot `sidebar_content`, order 100, `props.session_id` | slot `sidebar.content`, claim `{ replace: "sidebar.content", render: ({ sessionID }) => ... }` |
+| slot `sidebar_content`, order 100, `props.session_id` | slot `sidebar.content`, claim `{ prepend: "sidebar.content", render: ({ sessionID }) => ... }` |
 | `api` object threaded into `View` as a prop | `usePlugin()` from `@opencode/plugin/tui` inside components (returns the full `Context`) |
 | `View(props: { api, sessionID, options })` | `UsagePanel(props: { sessionID })`; context/options come from `usePlugin()` |
 | options argument of `tui(api, options)` | `context.options` (same JSON shape: `pricing`, `peakHours`, `timezone`) |
@@ -196,7 +201,8 @@ display strings stay byte-for-byte where possible.
 ## 8. README rewrite requirements
 
 - Requirements: opencode `>= 2.3.0`; TUI plugin importing `@opencode/plugin/tui`,
-  rendering the `sidebar.content` slot with `replace`.
+  rendering the `sidebar.content` slot with `prepend` (composes with other
+  sidebar panels).
 - Install (primary): `opencode plugin add https://github.com/andreacasini/opencode-usage-panel`
   (installs from git and registers globally).
 - Install (local checkout): point `cli.json` `plugins` at the directory:

@@ -33,8 +33,8 @@ only. Full contract: `SPEC.md`.
 - [x] Runtime verification: registered via cli.json (local dir), reconciled by the
       running TUI with no load errors; `opencode plugin add <git-url>` verified;
       object-form `package` with git URL verified
+- [ ] Open upstream PRs (pr/v2-port, pr/v2-subagent-usage) or hand over links
 - [ ] Final visual confirmation by the user in the TUI sidebar
-- [ ] User swaps their alternative panels for this one (optional cleanup of cli.json)
 
 ## Review log
 
@@ -46,6 +46,11 @@ only. Full contract: `SPEC.md`.
   One README correction applied by main agent after runtime verification:
   removed the "project opencode.json" suggestion (TUI-only packages belong in
   cli.json). Committed as three stages: docs spec, feat port, ci cleanup.
+- 2026-11-17, round 2 (main agent): family-aggregation diff review — pure
+  re-indentation of the identical per-message logic into the session loop;
+  sessionIDs helper matches spec (family dedupe, self-inclusion guard);
+  contextOf untouched; typecheck re-run independently (exit 0). PASS, no
+  fixes needed. Committed 9da9a4e.
 
 ## Verified facts (runtime, opencode 2.3.0)
 
@@ -72,10 +77,17 @@ only. Full contract: `SPEC.md`.
 - Version 2.0.0; original author credit kept; repository URLs point at the fork.
 - Coding delegated to one `google/gemini-3.8-flash` subagent (small codebase;
   sequential stages; main agent reviews + commits).
+- Placement is `prepend` (panel composes above other sidebar panels; built-in
+  context panel disable documented as `-opencode.sidebar.context`).
+- Subagent usage aggregates the session family by default (`includeSubagents`
+  option to scope back); Context block stays current-session-only.
+- Repo content is contribution-ready: no environment specifics in docs,
+  metadata points at the canonical repo. SPEC.md/MEMORY.md are fork-side
+  process docs, excluded from upstream PR branches.
 
 ## Next step
 
-User confirms the panel renders correctly in their TUI sidebar, then
-(optionally) removes the alternative panels from cli.json. If a pricing table
-is wanted, add options per README "Pricing & Options" and save cli.json to
-hot-reload. `opencode plugin update` moves the git install to newer commits.
+Open the two upstream PRs (or hand over compare links), then the user confirms
+the final panel state: usage panel above quota-sidebar, and gemini-3.8-flash
+rows appearing from subagent sessions (a hello-world subagent task is the
+live family-aggregation test).
