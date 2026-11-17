@@ -24,18 +24,43 @@ only. Full contract: `SPEC.md`.
 
 - [x] Research V2 plugin API; verify against 2.3.0 type definitions
 - [x] Write SPEC.md + MEMORY.md (this file)
-- [ ] Stage A — packaging scaffold (package.json V2, lockfile, CI, drop V1 build)
-- [ ] Stage B — `src/tui.tsx` entrypoint + `src/view.tsx` port
-- [ ] Stage C — `src/usage.tsx` / `src/pricing.tsx` / `src/types.tsx` data-layer port
-- [ ] Stage D — `npm run typecheck` green (0 errors)
-- [ ] Stage E — README rewrite for V2
-- [ ] Review + staged commits + push (main agent)
-- [ ] Live verification in the user's TUI (local install; compare with current panels)
-- [ ] Final push; user swaps their alternative panels for this one
+- [x] Stage A — packaging scaffold (package.json V2, lockfile, CI, drop V1 build)
+- [x] Stage B — `src/tui.tsx` entrypoint + `src/view.tsx` port
+- [x] Stage C — `src/usage.tsx` / `src/pricing.tsx` / `src/types.tsx` data-layer port
+- [x] Stage D — `npm run typecheck` green (0 errors; re-run by main agent)
+- [x] Stage E — README rewrite for V2
+- [x] Review + staged commits + push (main agent) — see review log
+- [x] Runtime verification: registered via cli.json (local dir), reconciled by the
+      running TUI with no load errors; `opencode plugin add <git-url>` verified;
+      object-form `package` with git URL verified
+- [ ] Final visual confirmation by the user in the TUI sidebar
+- [ ] User swaps their alternative panels for this one (optional cleanup of cli.json)
 
 ## Review log
 
-(main agent appends an entry per review round: date, stage, verdict, fixes requested)
+- 2026-11-17, round 1 (main agent): full diff review of all 14 changed files
+  against SPEC.md and the @opencode/plugin 2.3.0 types. Source port PASS with
+  zero code fixes required — entrypoint, slot claim, theme tokens, message
+  discrimination, nested model refs, optional tokens/cost guards, ModelCost
+  array handling all correct; typecheck re-run independently (exit 0).
+  One README correction applied by main agent after runtime verification:
+  removed the "project opencode.json" suggestion (TUI-only packages belong in
+  cli.json). Committed as three stages: docs spec, feat port, ci cleanup.
+
+## Verified facts (runtime, opencode 2.3.0)
+
+- `opencode plugin add` accepts npm or git specifiers only — NOT local paths
+  (error: "Plugin target must be an npm registry package or Git package specifier").
+- `opencode plugin add https://github.com/andreacasini/opencode-usage-panel` works
+  and pins to the pushed commit (shown in `opencode plugin list` VERSION column).
+- Object form `{ "package": "<git-url>", "options": {...} }` in cli.json works.
+- Local directory entries in cli.json `plugins` work (package.json name+exports
+  are honored; `./tui` resolves to `src/tui.tsx`).
+- The built-in context panel's V2 plugin id is `opencode.sidebar.context`; the
+  user's cli.json already disables it via `-opencode.sidebar.context`.
+- Our `replace: "sidebar.content"` claim suppresses other claims inside that
+  slot boundary — the user's alternative panels (token-usage, quota-sidebar)
+  are covered by it while both are enabled.
 
 ## Key decisions / rationale
 
@@ -50,4 +75,7 @@ only. Full contract: `SPEC.md`.
 
 ## Next step
 
-Launch the gemini-3.8-flash subagent with SPEC.md for stages A–E.
+User confirms the panel renders correctly in their TUI sidebar, then
+(optionally) removes the alternative panels from cli.json. If a pricing table
+is wanted, add options per README "Pricing & Options" and save cli.json to
+hot-reload. `opencode plugin update` moves the git install to newer commits.

@@ -1,9 +1,9 @@
 # opencode-usage-panel
 
-[![npm version](https://img.shields.io/npm/v/opencode-usage-panel.svg)](https://www.npmjs.com/package/opencode-usage-panel)
-
 A sidebar panel for the [opencode](https://opencode.ai) TUI that breaks a
 session down by model: how many tokens each one consumed and what it cost.
+
+> **Note:** This plugin is maintained in this fork ([andreacasini/opencode-usage-panel](https://github.com/andreacasini/opencode-usage-panel)) and installed directly from git or a local checkout (there is no npm package).
 
 <p align="center">
   <img src="./screenshots/image.png" alt="opencode-usage-panel sidebar" width="320" />
@@ -20,79 +20,50 @@ the model's own total tokens.
 
 ## Requirements
 
-- opencode `>= 1.18.0`
+- opencode `>= 2.3.0`
 
-The plugin is a TUI plugin: it imports from `@opencode-ai/plugin/tui` and renders
-into the `sidebar_content` slot at order `100`, the same slot the built-in
-context panel uses.
+The plugin is a TUI plugin: it imports from `@opencode/plugin/tui` and renders
+into the `sidebar.content` slot with `replace`, taking over opencode's built-in
+context panel.
 
 ## Install
 
-### From npm
+### From git (recommended)
 
-Available on npm: [opencode-usage-panel](https://www.npmjs.com/package/opencode-usage-panel).
-
-Install it with the CLI:
+Install and register the plugin globally with the OpenCode CLI:
 
 ```sh
-opencode plugin opencode-usage-panel --global
-```
-
-Or add the package to `tui.json` yourself — opencode installs npm plugins on
-startup. Use `.opencode/tui.json` (project) or `~/.config/opencode/tui.json`
-(global):
-
-```jsonc
-{
-  "$schema": "https://opencode.ai/tui.json",
-  "plugin": ["opencode-usage-panel"]
-}
+opencode plugin add https://github.com/andreacasini/opencode-usage-panel
 ```
 
 ### From a local checkout
 
-There's no need to copy the file into a plugin directory. Point `tui.json`
-straight at the source with an absolute path (or a `file://` URL):
+Clone the repository and point `plugins` in `~/.config/opencode/cli.json` at the directory:
 
 ```jsonc
 {
-  "$schema": "https://opencode.ai/tui.json",
-  "plugin": ["/Users/you/opencode-usage-panel/src/index.tsx"]
+  "$schema": "https://opencode.ai/v2/cli.json",
+  "plugins": ["/abs/path/opencode-usage-panel"]
 }
 ```
 
-### Disable the built-in panel
-
-The plugin renders into the same slot as opencode's built-in context panel, so
-turn that one off to avoid stacking:
-
-```jsonc
-{
-  "plugin_enabled": {
-    "internal:sidebar-context": false
-  }
-}
-```
-
-## Pricing
+## Pricing & Options
 
 Cost is computed per message from a rate table, so peak/off-peak pricing is
 honoured using each message's own timestamp. Models without a configured rate
 table fall back to the `cost` opencode records, which is priced automatically
 from [models.dev](https://models.dev) (free tiers show `—`).
 
-### Rate tables
-
-Prices are US dollars per million tokens. `input` is cache-miss input,
-`cacheRead` is cache-hit input, and `output` also covers `reasoning` unless a
-separate `reasoning` rate is given.
+Options (`pricing`, `peakHours`, `timezone`) are configured via the `plugins`
+object form in `~/.config/opencode/cli.json`:
 
 ```jsonc
 {
-  "plugin": [
-    [
-      "opencode-usage-panel",
-      {
+  "$schema": "https://opencode.ai/v2/cli.json",
+  "plugins": [
+    {
+      "package": "https://github.com/andreacasini/opencode-usage-panel",
+      "options": {
         "pricing": {
           "deepseek-flash": {
             "input": 0.15,
@@ -106,10 +77,18 @@ separate `reasoning` rate is given.
           }
         }
       }
-    ]
+    }
   ]
 }
 ```
+
+(Or replace `"package"` with `"/abs/path/opencode-usage-panel"` when running from a local checkout.)
+
+### Rate tables
+
+Prices are US dollars per million tokens. `input` is cache-miss input,
+`cacheRead` is cache-hit input, and `output` also covers `reasoning` unless a
+separate `reasoning` rate is given.
 
 Keys can be a bare `modelID` or `providerID/modelID`. Top-level rates apply
 outside peak windows; the optional `peak` block replaces them inside peak
