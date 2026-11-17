@@ -1,6 +1,6 @@
 # MEMORY — port checkpoint
 
-Last updated: 2026-11-17 (main agent)
+Last updated: 2026-11-17 (main agent) — port complete, upstream PRs #1 and #2 open
 
 ## Mission
 
@@ -36,7 +36,11 @@ only. Full contract: `SPEC.md`.
 - [x] Upstream PR branches pushed (pr/v2-port, pr/v2-subagent-usage) — the token
       cannot open PRs on the upstream repo (403 fine-grained PAT scope), so
       compare links were handed over
-- [ ] Final visual confirmation by the user in the TUI sidebar
+- [x] Final visual confirmation by the user: usage panel renders above
+      quota-sidebar, gemini-3.8-flash rows aggregated from subagent sessions
+- [x] Upstream PRs submitted by the user:
+      PR #1 port — https://github.com/shiv-source/opencode-usage-panel/pull/1
+      PR #2 subagent usage — https://github.com/shiv-source/opencode-usage-panel/pull/2
 
 ## Review log
 
@@ -53,6 +57,11 @@ only. Full contract: `SPEC.md`.
   sessionIDs helper matches spec (family dedupe, self-inclusion guard);
   contextOf untouched; typecheck re-run independently (exit 0). PASS, no
   fixes needed. Committed 9da9a4e.
+- 2026-11-17, final (main agent): user reported quota-sidebar and subagent rows
+  missing after the feature landed — root cause was the running TUI executing
+  the first-imported module (replace, pre-family); plugin updates swap
+  snapshots without re-importing. Fixed with a plugin remove+add reload
+  cycle; user confirmed the final panel state. No code changes were needed.
 
 ## Verified facts (runtime, opencode 2.3.0)
 
@@ -96,6 +105,9 @@ only. Full contract: `SPEC.md`.
 
 ## Next step
 
-User opens the two PRs from the compare links (port first; the subagent-usage
-PR is stacked on it), then confirms the final panel state: usage panel above
-quota-sidebar, with gemini-3.8-flash rows aggregated from subagent sessions.
+Project complete from this side. Watch the upstream PRs for review feedback;
+port any requested changes onto pr/v2-port (PR #1) or pr/v2-subagent-usage
+(PR #2) and push — do not force-push rewritten branches once they are under
+review. Fork main remains the user's install source: after future updates run
+`opencode plugin update` and `/reload` the TUI so the new code is actually
+imported.
