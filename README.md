@@ -3,8 +3,6 @@
 A sidebar panel for the [opencode](https://opencode.ai) TUI that breaks a
 session down by model: how many tokens each one consumed and what it cost.
 
-> **Note:** This plugin is maintained in this fork ([andreacasini/opencode-usage-panel](https://github.com/andreacasini/opencode-usage-panel)) and installed directly from git or a local checkout (there is no npm package).
-
 <p align="center">
   <img src="./screenshots/image.png" alt="opencode-usage-panel sidebar" width="320" />
 </p>
@@ -23,17 +21,22 @@ the model's own total tokens.
 - opencode `>= 2.3.0`
 
 The plugin is a TUI plugin: it imports from `@opencode/plugin/tui` and renders
-into the `sidebar.content` slot with `replace`, taking over opencode's built-in
-context panel.
+into the `sidebar.content` slot alongside other sidebar panels.
 
 ## Install
 
-### From git (recommended)
+### From npm
 
 Install and register the plugin globally with the OpenCode CLI:
 
 ```sh
-opencode plugin add https://github.com/andreacasini/opencode-usage-panel
+opencode plugin add opencode-usage-panel
+```
+
+### From a git checkout
+
+```sh
+opencode plugin add https://github.com/shiv-source/opencode-usage-panel
 ```
 
 ### From a local checkout
@@ -44,6 +47,17 @@ Clone the repository and point `plugins` in `~/.config/opencode/cli.json` at the
 {
   "$schema": "https://opencode.ai/v2/cli.json",
   "plugins": ["/abs/path/opencode-usage-panel"]
+}
+```
+
+### Disable the built-in panel
+
+The `Context` block reports the same numbers as opencode's built-in context
+panel, so turn that one off to avoid stacking:
+
+```jsonc
+{
+  "plugins": ["*", "-opencode.sidebar.context"]
 }
 ```
 
@@ -62,7 +76,7 @@ object form in `~/.config/opencode/cli.json`:
   "$schema": "https://opencode.ai/v2/cli.json",
   "plugins": [
     {
-      "package": "https://github.com/andreacasini/opencode-usage-panel",
+      "package": "opencode-usage-panel",
       "options": {
         "pricing": {
           "deepseek-flash": {
@@ -82,7 +96,7 @@ object form in `~/.config/opencode/cli.json`:
 }
 ```
 
-(Or replace `"package"` with `"/abs/path/opencode-usage-panel"` when running from a local checkout.)
+(Replace `"package"` with the absolute path of a local checkout, or a git URL, when not installing from npm.)
 
 ### Rate tables
 

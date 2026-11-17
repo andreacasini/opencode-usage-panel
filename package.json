@@ -5,9 +5,9 @@
   "description": "Sidebar token-usage and cost panel for the opencode TUI. Breaks a session down by model with per-model cost, context usage, and configurable peak/off-peak pricing.",
   "author": { "name": "shiv kumar" },
   "contributors": [{ "name": "Andrea Casini" }],
-  "repository": { "type": "git", "url": "git+https://github.com/andreacasini/opencode-usage-panel.git" },
-  "homepage": "https://github.com/andreacasini/opencode-usage-panel",
-  "bugs": { "url": "https://github.com/andreacasini/opencode-usage-panel/issues" },
+  "repository": { "type": "git", "url": "git+https://github.com/shiv-source/opencode-usage-panel.git" },
+  "homepage": "https://github.com/shiv-source/opencode-usage-panel",
+  "bugs": { "url": "https://github.com/shiv-source/opencode-usage-panel/issues" },
   "type": "module",
   "license": "MIT",
   "scripts": {
