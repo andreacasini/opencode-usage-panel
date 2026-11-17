@@ -9,7 +9,7 @@ export default Plugin.define({
     const location = context.location ?? context.data.location.default()
     void context.data.location.model.sync(location).catch(() => {})
     return context.ui.slot({
-      replace: "sidebar.content",
+      prepend: "sidebar.content",
       render: ({ sessionID }) => <UsagePanel sessionID={sessionID} />,
     })
   },
