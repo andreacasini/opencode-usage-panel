@@ -33,7 +33,9 @@ only. Full contract: `SPEC.md`.
 - [x] Runtime verification: registered via cli.json (local dir), reconciled by the
       running TUI with no load errors; `opencode plugin add <git-url>` verified;
       object-form `package` with git URL verified
-- [ ] Open upstream PRs (pr/v2-port, pr/v2-subagent-usage) or hand over links
+- [x] Upstream PR branches pushed (pr/v2-port, pr/v2-subagent-usage) — the token
+      cannot open PRs on the upstream repo (403 fine-grained PAT scope), so
+      compare links were handed over
 - [ ] Final visual confirmation by the user in the TUI sidebar
 
 ## Review log
@@ -63,9 +65,16 @@ only. Full contract: `SPEC.md`.
   are honored; `./tui` resolves to `src/tui.tsx`).
 - The built-in context panel's V2 plugin id is `opencode.sidebar.context`; the
   user's cli.json already disables it via `-opencode.sidebar.context`.
-- Our `replace: "sidebar.content"` claim suppresses other claims inside that
-  slot boundary — the user's alternative panels (token-usage, quota-sidebar)
-  are covered by it while both are enabled.
+- Our `prepend: "sidebar.content"` claim composes with other claims inside that
+  slot; the user's quota-sidebar renders below our panel.
+- The fine-grained PAT is scoped to the fork: creating PRs on the upstream repo
+  returns 403 "Resource not accessible by personal access token". The PRs are
+  opened via compare links instead.
+- `opencode plugin update` replaces the package snapshot on disk
+  (`~/.cache/opencode/npm/<install-key>/<timestamp>/`) but does NOT re-import
+  the module in an already-running TUI — the TUI keeps executing the code it
+  first imported. Force a reload with a config-driven unload/reload
+  (`opencode plugin remove` + `plugin add`) or the TUI's `/reload`.
 
 ## Key decisions / rationale
 
@@ -87,7 +96,6 @@ only. Full contract: `SPEC.md`.
 
 ## Next step
 
-Open the two upstream PRs (or hand over compare links), then the user confirms
-the final panel state: usage panel above quota-sidebar, and gemini-3.8-flash
-rows appearing from subagent sessions (a hello-world subagent task is the
-live family-aggregation test).
+User opens the two PRs from the compare links (port first; the subagent-usage
+PR is stacked on it), then confirms the final panel state: usage panel above
+quota-sidebar, with gemini-3.8-flash rows aggregated from subagent sessions.
