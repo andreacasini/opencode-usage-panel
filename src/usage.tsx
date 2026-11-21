@@ -14,6 +14,24 @@ const FIELDS: Array<[keyof Counts, string]> = [
   ["cacheRead", "cache read"],
 ]
 
+const MESSAGE_PAGE = 200
+
+export type ReadResult = {
+  models: Usage[]
+  cost: number
+  surcharge: number
+  hasPeak: boolean
+  context: { tokens: number; percent: number | null }
+}
+
+export const EMPTY_READ: ReadResult = {
+  models: [],
+  cost: 0,
+  surcharge: 0,
+  hasPeak: false,
+  context: { tokens: 0, percent: null },
+}
+
 function counts(tokens: TokenUsageInfo): Counts {
   return {
     input: tokens.input,
@@ -48,8 +66,46 @@ function sessionIDs(context: Context, sessionID: string, config: Config): string
   return family.includes(sessionID) ? family : [sessionID, ...family]
 }
 
-function contextOf(context: Context, sessionID: string): { tokens: number; percent: number | null } {
-  const last = context.data.session.message.list(sessionID).findLast(isAssistantWithOutput)
+// Full pages through the client, not data.session.message.sync: that call
+// replaces the host transcript cache with a single short page, and the host
+// does not keep the plugin-visible message cache populated on every build.
+async function listAllMessages(context: Context, sessionID: string): Promise<readonly SessionMessageInfo[]> {
+  const collected: SessionMessageInfo[] = []
+  const seen = new Set<string>()
+  let cursor: string | undefined
+  for (;;) {
+    const page = await context.client.message.list({
+      sessionID,
+      limit: MESSAGE_PAGE,
+      ...(cursor ? { cursor } : { order: "asc" as const }),
+    })
+    collected.push(...page.data)
+    const next = page.cursor.next ?? undefined
+    if (!next || seen.has(next)) break
+    seen.add(next)
+    cursor = next
+  }
+  return collected
+}
+
+async function sessionMessages(context: Context, sessionID: string): Promise<readonly SessionMessageInfo[]> {
+  try {
+    return await listAllMessages(context, sessionID)
+  } catch {
+    // Fall back to whatever the host transcript has cached for this session.
+    try {
+      return context.data.session.message.list(sessionID) ?? []
+    } catch {
+      return []
+    }
+  }
+}
+
+function contextOf(
+  context: Context,
+  messages: readonly SessionMessageInfo[],
+): { tokens: number; percent: number | null } {
+  const last = messages.findLast(isAssistantWithOutput)
   if (!last) return { tokens: 0, percent: null }
   const tokens =
     last.tokens.input + last.tokens.output + last.tokens.reasoning + last.tokens.cache.read + last.tokens.cache.write
@@ -59,23 +115,22 @@ function contextOf(context: Context, sessionID: string): { tokens: number; perce
   return { tokens, percent: model?.limit.context ? Math.round((tokens / model.limit.context) * 100) : null }
 }
 
-export function read(
+export async function read(
   context: Context,
   sessionID: string,
   options: Record<string, unknown> | undefined,
-): {
-  models: Usage[]
-  cost: number
-  surcharge: number
-  hasPeak: boolean
-  context: { tokens: number; percent: number | null }
-} {
+): Promise<ReadResult> {
+  if (!sessionID) return EMPTY_READ
   const config = readConfig(options)
   const buckets = new Map<string, Bucket>()
   let surcharge = 0
+  let currentMessages: readonly SessionMessageInfo[] = []
 
   for (const sid of sessionIDs(context, sessionID, config)) {
-    for (const message of context.data.session.message.list(sid)) {
+    const messages = await sessionMessages(context, sid)
+    if (sid === sessionID) currentMessages = messages
+
+    for (const message of messages) {
       if (message.type !== "assistant") continue
       if (!message.tokens) continue
       const value = counts(message.tokens)
@@ -138,6 +193,6 @@ export function read(
     cost: models.reduce((sum, model) => sum + model.cost, 0),
     surcharge,
     hasPeak: models.some((model) => model.peak),
-    context: contextOf(context, sessionID),
+    context: contextOf(context, currentMessages),
   }
 }
