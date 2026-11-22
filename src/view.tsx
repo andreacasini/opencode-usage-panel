@@ -1,9 +1,9 @@
 /** @jsxImportSource @opentui/solid */
-import { createMemo, createSignal, onCleanup } from "solid-js"
+import { createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import { usePlugin } from "@opencode/plugin/tui"
 import { isPeak, peakWindow, readConfig } from "./config"
 import { formatClock, formatCost, timezoneLabel, utcOffsetMinutes } from "./format"
-import { read } from "./usage"
+import { EMPTY_READ, read, type ReadResult } from "./usage"
 import type { Window } from "./types"
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -47,7 +47,47 @@ export function UsagePanel(props: { sessionID: string }) {
   }
 
   const config = createMemo(() => readConfig(context.options))
-  const state = createMemo(() => read(context, props.sessionID, context.options))
+
+  // Usage is read through the OpenCode client (the full session, every page)
+  // instead of the host transcript cache, so the panel does not depend on
+  // what the host happens to have cached. Reload on the session events that
+  // change usage; a version counter drops stale responses.
+  const [result, setResult] = createSignal<ReadResult>(EMPTY_READ)
+  let loadVersion = 0
+  const load = () => {
+    const sessionID = props.sessionID
+    if (!sessionID) return
+    const version = ++loadVersion
+    void read(context, sessionID, context.options)
+      .then((value) => {
+        if (version === loadVersion) setResult(value)
+      })
+      .catch(() => {})
+  }
+
+  createEffect(() => {
+    setResult(EMPTY_READ)
+    load()
+  })
+
+  onMount(() => {
+    const unsubs = [
+      context.data.on("session.usage.updated", load),
+      context.data.on("session.step.ended", load),
+      context.data.on("session.step.failed", load),
+      context.data.on("session.created", load),
+      context.data.on("session.execution.succeeded", load),
+      context.data.on("session.execution.failed", load),
+      context.data.on("session.execution.interrupted", load),
+      context.data.on("session.status", load),
+      context.data.on("model.updated", load),
+    ]
+    onCleanup(() => {
+      for (const unsubscribe of unsubs) unsubscribe()
+    })
+  })
+
+  const state = createMemo(() => result())
   const peakNow = createMemo(() => isPeak(config(), now()))
   const activePeak = createMemo(() => peakWindow(config(), now()))
   const peakPriced = createMemo(() => state().hasPeak && config().windows.length > 0)
